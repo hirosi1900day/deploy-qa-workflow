@@ -149,11 +149,13 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Create Target Group
+      env:
+        PORT: ${{ steps.create_deploy.outputs.result.port }}
       run: |
         TG_ARN=$(aws elbv2 create-target-group \
-        --name ${{ steps.create_deploy.outputs.result.port }} \
+        --name qa-$PORT \
         --protocol HTTP \
-        --port ${{ steps.create_deploy.outputs.result.port }} \
+        --port $PORT \
         --vpc $VPC_ID \
         --target-type ip \
         --health-check-path '/' \
@@ -162,7 +164,7 @@ jobs:
         aws elbv2 create-listener \
         --load-balancer-arn $LB_ARN \
         --protocol HTTPS \
-        --port ${{ steps.create_deploy.outputs.result.port }} \
+        --port $PORT \
         --default-actions Type=forward,TargetGroupArn=$TG_ARN; true
        
 
