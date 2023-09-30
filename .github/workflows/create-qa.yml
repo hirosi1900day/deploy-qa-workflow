@@ -19,6 +19,7 @@ env:
   STG_FAMILY: test-nginx
   QA_FAMILY: frontend-qa-task-def
   QA_REPOSITORY_URL: 572919087216.dkr.ecr.ap-northeast-1.amazonaws.com/nginx
+  LB_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:572919087216:loadbalancer/app/qa-lb/faef0a5b92b2d8be
 
 jobs:
   # PRに `/deploy-qa` のコメントをしたとき、+1のリアクションをつけ、PRにQAラベルをつける。
