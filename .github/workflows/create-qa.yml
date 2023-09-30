@@ -152,6 +152,8 @@ jobs:
       env:
         PORT: ${{ steps.create_deploy.outputs.result.port }}
       run: |
+        echo $PORT
+        echo qa-$PORT
         TG_ARN=$(aws elbv2 create-target-group \
         --name qa-$PORT \
         --protocol HTTP \
