@@ -224,22 +224,7 @@ jobs:
         # QA環境のECSサービスが存在しない場合は作成し、存在する場合はタスク定義のリビジョンを更新
       run: |
         if [ "$ECS_SERVICE_STATUS" == "" ]; then
-          aws ecs create-service --cli-input-json file://service.json
-
-          # QA環境の夜間停止の設定
-          aws events put-rule --name "qa-$PORT-start" --schedule-expression "cron(0 21 ? * SUN-THU *)" # 平日06:00 JST
-          aws events put-targets --rule "qa-$PORT-start" --targets $(jq -nc '.Id = "Target" |
-            .Arn = "'$AUTOMATION_ARN':$LATEST" |
-            .RoleArn = "'$EVENT_ROLE_ARN'" |
-            .Input = "{\"AutomationAssumeRole\":[\"'$AUTOMATION_ROLE_ARN'\"],\"cluster\":[\"'$QA_CLUSTER'\"],\"service\":[\"'$DEPLOY_ENV'\"],\"desiredCount\":[\"1\"]}"
-          ')
-
-          aws events put-rule --name "qa-$PORT-stop"  --schedule-expression "cron(0 14 ? * MON-FRI *)" # 平日23:00 JST
-          aws events put-targets --rule "qa-$PORT-stop" --targets $(jq -nc '.Id = "Target" |
-            .Arn = "'$AUTOMATION_ARN':$LATEST" |
-            .RoleArn = "'$EVENT_ROLE_ARN'" |
-            .Input = "{\"AutomationAssumeRole\":[\"'$AUTOMATION_ROLE_ARN'\"],\"cluster\":[\"'$QA_CLUSTER'\"],\"service\":[\"'$DEPLOY_ENV'\"],\"desiredCount\":[\"0\"]}"
-          ')
+          aws ecs create-service --cli-input-json service.json
         else
           aws ecs update-service --cluster $QA_CLUSTER --service $DEPLOY_ENV --task-definition $TASK_DEF_ARN
         fi
