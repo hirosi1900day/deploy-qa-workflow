@@ -92,7 +92,6 @@ jobs:
     - name: Build cache
       uses: docker/build-push-action@v5
       with:
-        target: deps
         context: .
         build-args: |
           NODE_ENV=development
