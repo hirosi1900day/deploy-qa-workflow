@@ -223,6 +223,7 @@ jobs:
     - name: Update Service
         # QA環境のECSサービスが存在しない場合は作成し、存在する場合はタスク定義のリビジョンを更新
       run: |
+        cat service.json
         if [ "$ECS_SERVICE_STATUS" == "" ]; then
           aws ecs create-service --cli-input-json file://service.json
         else
