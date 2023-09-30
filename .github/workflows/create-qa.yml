@@ -140,7 +140,7 @@ jobs:
             auto_merge: false,
             payload,
           });
-          return { deploymentId: deployment.id, port };
+          return { deploymentId: deployment.id, port: port };
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
