@@ -8,6 +8,7 @@ permissions:
   id-token: write
   contents: read
   pull-requests: write
+  deployments: write
 
 env:
   RAILS_ENV: staging
