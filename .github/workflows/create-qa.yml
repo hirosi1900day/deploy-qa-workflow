@@ -173,7 +173,7 @@ jobs:
         --output text; true)
         aws elbv2 create-listener \
         --load-balancer-arn $LB_ARN \
-        --protocol HTTPS \
+        --protocol HTTP \
         --port $PORT \
         --default-actions Type=forward,TargetGroupArn=$TG_ARN; true
        
