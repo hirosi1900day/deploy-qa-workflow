@@ -140,8 +140,15 @@ jobs:
             auto_merge: false,
             payload,
           });
-          return { deploymentId: deployment.id, port: port };
-
+          return deployment.id;
+      
+    - name: Create a deployment
+      id: create_port
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const port = 50000 + context.issue.number % 10000;
+          return port
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -150,7 +157,7 @@ jobs:
 
     - name: Create Target Group
       env:
-        PORT: ${{ steps.create_deploy.outputs.result.port }}
+        PORT: ${{ steps.create_port.outputs.result }}
       run: |
         echo $PORT
         echo qa-$PORT
