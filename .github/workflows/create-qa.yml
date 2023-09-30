@@ -107,7 +107,7 @@ jobs:
         build-args: |
           NODE_ENV=development
         tags: |
-          ${{ steps.login-ecr.outputs.registry }}/$INFRA_ENV:$IMAGE_TAG
+          ${{ steps.login-ecr.outputs.registry }}/${{ env.INFRA_ENV }}:${{ env.IMAGE_TAG }}
         cache-from: type=gha,scope=nuxt
 
   # ポート番号が50000〜60000になるようにPR番号から計算し、deploymentを作成する。
