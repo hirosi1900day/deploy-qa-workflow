@@ -14,7 +14,7 @@ permissions:
 
 env:
   QA_CLUSTER: arn:aws:ecs:ap-northeast-1:572919087216:cluster/ecs-lessson-cluster
-  LB_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:572919087216:loadbalancer/app/qa-lb/faef0a5b92b2d8be
+  LB_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:572919087216:loadbalancer/app/qa/3e070e17fb4b1060
 jobs:
   # PRに `/drop-qa` のコメントをしたとき、+1のリアクションをつけ、PRのQAラベルを外す。
   # PRに対応するQA環境が存在するとき、削除を開始するコメントを残す。
