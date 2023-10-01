@@ -108,7 +108,7 @@ jobs:
     - name: Get port
       run: |
         PORT=$(( 50000 + ${{ github.event.issue.number || github.event.pull_request.number }} % 10000 ))
-        echo "post=$PORT" >> $GITHUB_ENV
+        echo "port=$PORT" >> $GITHUB_ENV
     
     - name: Delete QA
       env:
