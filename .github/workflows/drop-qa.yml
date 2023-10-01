@@ -117,7 +117,7 @@ jobs:
       run: |
         echo $QA_NAME
         echo $PORT
-        
+
         aws ecs delete-service --cluster $QA_CLUSTER --service $QA_NAME --force
         LISTENER_ARN=$(aws elbv2 describe-listeners \
           --load-balancer-arn $LB_ARN \
@@ -141,7 +141,7 @@ jobs:
   delete-deployment:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [start-codebuild]
+    needs: [delete-qa]
 
     steps:
     - name: Delete a running deployment
