@@ -20,6 +20,7 @@ env:
   QA_FAMILY: frontend-qa-task-def
   QA_REPOSITORY_URL: 572919087216.dkr.ecr.ap-northeast-1.amazonaws.com/nginx
   LB_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:572919087216:loadbalancer/app/qa-lb/faef0a5b92b2d8be
+  STG_CLUSTER: ecs-lesson-cluster
   QA_CLUSTER: ecs-lessson-cluster
 
 jobs:
