@@ -90,7 +90,7 @@ jobs:
             body: `Start dropping the running "qa-${port}" environment.`,
           });
 
-  start-codebuild:
+  delete-qa:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [reaction]
@@ -115,6 +115,9 @@ jobs:
         QA_NAME: qa-${{ env.port }}
         PORT: ${{ env.port }}
       run: |
+        echo $QA_NAME
+        echo $PORT
+        
         aws ecs delete-service --cluster $QA_CLUSTER --service $QA_NAME --force
         LISTENER_ARN=$(aws elbv2 describe-listeners \
           --load-balancer-arn $LB_ARN \
