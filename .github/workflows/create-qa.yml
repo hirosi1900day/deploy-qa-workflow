@@ -23,6 +23,7 @@ env:
   STG_CLUSTER: arn:aws:ecs:ap-northeast-1:572919087216:cluster/ecs-lessson-cluster
   STG_SERVICE: cloudfront-test-nginx
   QA_CLUSTER: arn:aws:ecs:ap-northeast-1:572919087216:cluster/ecs-lessson-cluster
+  QA_DOMAIN: frontend-qa.ava-intel.com
 
 jobs:
   # PRに `/deploy-qa` のコメントをしたとき、+1のリアクションをつけ、PRにQAラベルをつける。
@@ -132,7 +133,7 @@ jobs:
           const port = 50000 + context.issue.number % 10000;
           const ref = "${{ needs.setup.outputs.head_sha }}";
           const payload = {
-            web_url: `https://frontend-qa.ava-intel.com:${port}`,
+            web_url: `${{ env.QA_DOMAIN }}:${port}`,
           };
 
           const { data: deployment } = await github.rest.repos.createDeployment({
@@ -239,6 +240,16 @@ jobs:
           aws ecs update-service --cluster $QA_CLUSTER --service $DEPLOY_ENV --task-definition $TASK_DEF_ARN
         fi
 
+    - name: Create a comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '${{ env.QA_DOMAIN }}:${{ steps.create_port.outputs.result }} にデプロイしました。}}'
+          })
     - name: Deployment status succusess
       uses: actions/github-script@v6
       with:
