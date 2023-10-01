@@ -198,6 +198,7 @@ jobs:
         DEPLOY_ENV: qa-${{ steps.create_port.outputs.result }}
         TG_ARN: ${{ steps.target_gruop.outputs.result }}
       run: |
+        echo $TG_ARN
         TASK_DEF_ARN=$(aws ecs register-task-definition \
         --cli-input-json file://task-definition.json \
         --query 'taskDefinition.taskDefinitionArn' \
