@@ -220,6 +220,8 @@ jobs:
           exit 1
         fi
 
+        cat service.json
+
     - name: Update Service
         # QA環境のECSサービスが存在しない場合は作成し、存在する場合はタスク定義のリビジョンを更新
       run: |
