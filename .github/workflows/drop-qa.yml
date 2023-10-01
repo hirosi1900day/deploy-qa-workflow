@@ -1,0 +1,163 @@
+name: Drop QA
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [closed]
+
+env:
+  QA_CLUSTER: arn:aws:ecs:ap-northeast-1:572919087216:cluster/ecs-lessson-cluster
+  LB_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:572919087216:loadbalancer/app/qa-lb/faef0a5b92b2d8be
+jobs:
+  # PRに `/drop-qa` のコメントをしたとき、+1のリアクションをつけ、PRのQAラベルを外す。
+  # PRに対応するQA環境が存在するとき、削除を開始するコメントを残す。
+  reaction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      conclusion: ${{ steps.create-comment.conclusion }}
+
+    steps:
+    - name: Create a reaction
+      id: create-reaction
+      if: github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/drop-qa')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await github.rest.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: "+1",
+          });
+
+    - name: Remove QA label with drop-qa comment
+      if: steps.create-reaction.conclusion == 'success' && contains(github.event.issue.labels.*.name, 'QA')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await github.rest.issues.removeLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            name: 'QA',
+          });
+
+    - name: Remove QA label when pull_request is closed
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'QA')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await github.rest.issues.removeLabel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            name: 'QA',
+          });
+
+    - name: Check for a running deployment
+      id: check-deployment
+      if: steps.create-reaction.conclusion == 'success' || github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const port = 50000 + context.issue.number % 10000;
+          const { data: deployments } = await github.rest.repos.listDeployments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            environment: `qa-${port}`,
+          });
+          return deployments.length !== 0;
+
+    - name: Create a comment
+      id: create-comment
+      if: steps.check-deployment.conclusion == 'success' && steps.check-deployment.outputs.result == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const port = 50000 + context.issue.number % 10000;
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `Start dropping the running "qa-${port}" environment.`,
+          });
+
+  start-codebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [reaction]
+    if: needs.reaction.outputs.conclusion == 'success'
+    env:
+      AWS_REGION: ap-northeast-1
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ env.AWS_REGION }}
+        role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+    
+    - name: Get port
+      run: |
+        PORT=$(( 50000 + ${{ github.event.issue.number || github.event.pull_request.number }} % 10000 ))
+        echo "post=$PORT" >> $GITHUB_ENV
+    
+    - name: Delete QA
+      env:
+        QA_NAME: qa-${{ env.port }}
+        PORT: ${{ env.port }}
+      run: |
+        aws ecs delete-service --cluster $QA_CLUSTER --service $QA_NAME --force
+        LISTENER_ARN=$(aws elbv2 describe-listeners \
+          --load-balancer-arn $LB_ARN \
+          --query "Listeners[?Port==\`$PORT\`].ListenerArn" \
+          --output text; true)
+
+        if [ -n "$LISTENER_ARN" ]; then
+          aws elbv2 delete-listener --listener-arn $LISTENER_ARN
+        fi
+
+        TG_ARN=$(aws elbv2 describe-target-groups \
+          --names $QA_NAME \
+          --query 'TargetGroups[].TargetGroupArn' \
+          --output text; true)
+
+        if [ -n "$TG_ARN" ]; then
+          aws elbv2 delete-target-group --target-group-arn $TG_ARN
+        fi
+
+  # active なデプロイは削除できないため、ステータスをinactiveにしてから削除する。
+  delete-deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [start-codebuild]
+
+    steps:
+    - name: Delete a running deployment
+      uses: actions/github-script@v6
+      with:
+        previews: ant-man-preview
+        script: |
+          const port = 50000 + context.issue.number % 10000;
+
+          const { data: deployments } = await github.rest.repos.listDeployments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            environment: `qa-${port}`,
+          });
+          for await (let deployment of deployments) {
+            const deployment_id = deployment.id;
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id,
+              state: "inactive",
+            });
+            await github.rest.repos.deleteDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id,
+            });
+          }
