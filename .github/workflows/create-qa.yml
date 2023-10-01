@@ -160,7 +160,6 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Create Target Group
-      id: target_gruop
       env:
         PORT: ${{ steps.create_port.outputs.result }}
       run: |
@@ -196,7 +195,7 @@ jobs:
     - name: Register Task Def
       env: 
         DEPLOY_ENV: qa-${{ steps.create_port.outputs.result }}
-        TG_ARN: ${{ steps.target_gruop.outputs.result }}
+        TG_ARN: ${{ env.target_arn }}
       run: |
         echo $TG_ARN
         TASK_DEF_ARN=$(aws ecs register-task-definition \
