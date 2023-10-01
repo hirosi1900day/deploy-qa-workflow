@@ -189,7 +189,7 @@ jobs:
         cat desc-task-def.json |
         jq -c ".taskDefinition | del(.[\"taskDefinitionArn\", \"revision\", \"status\", \"requiresAttributes\", \"compatibilities\", \"registeredAt\", \"registeredBy\"]) |
         .family |= \"$QA_FAMILY\" |
-        (.containerDefinitions[] | select(.name==\"ava-travel-nuxt-stg\") | .image) |= \"$QA_REPOSITORY_URL:${{ needs.setup.outputs.head_sha }}\"" > task-definition.json
+        (.containerDefinitions[] | select(.name==\"nginx\") | .image) |= \"$QA_REPOSITORY_URL:${{ needs.setup.outputs.head_sha }}\"" > task-definition.json
 
     # stagingのECSサービスの設定を取得し、QA環境用に差し替えたJSONを作成
     - name: Register Task Def
@@ -197,7 +197,6 @@ jobs:
         DEPLOY_ENV: qa-${{ steps.create_port.outputs.result }}
         TG_ARN: ${{ env.target_arn }}
       run: |
-        echo $TG_ARN
         TASK_DEF_ARN=$(aws ecs register-task-definition \
         --cli-input-json file://task-definition.json \
         --query 'taskDefinition.taskDefinitionArn' \
@@ -239,3 +238,19 @@ jobs:
         else
           aws ecs update-service --cluster $QA_CLUSTER --service $DEPLOY_ENV --task-definition $TASK_DEF_ARN
         fi
+
+    - name: Deployment status succusess
+      uses: actions/github-script@v6
+      with:
+        previews: ant-man-preview
+        result-encoding: string
+        script: |
+          const deployment_id = "${{ steps.create_deploy.outputs.result }}";
+
+          await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id,
+              state: "success",
+          });
+
