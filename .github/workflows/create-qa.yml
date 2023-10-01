@@ -23,7 +23,7 @@ env:
   STG_CLUSTER: arn:aws:ecs:ap-northeast-1:572919087216:cluster/ecs-lessson-cluster
   STG_SERVICE: cloudfront-test-nginx
   QA_CLUSTER: arn:aws:ecs:ap-northeast-1:572919087216:cluster/ecs-lessson-cluster
-  QA_DOMAIN: frontend-qa.ava-intel.com
+  QA_DOMAIN: https://frontend-qa.ava-intel.com
 
 jobs:
   # PRに `/deploy-qa` のコメントをしたとき、+1のリアクションをつけ、PRにQAラベルをつける。
@@ -248,7 +248,7 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '${{ env.QA_DOMAIN }}:${{ steps.create_port.outputs.result }} にデプロイしました。}}'
+            body: '[${{ env.QA_DOMAIN }}:${{ steps.create_port.outputs.result }}](http://${{ env.QA_DOMAIN }}:${{ steps.create_port.outputs.result }}) にデプロイしました。'
           })
     - name: Deployment status succusess
       uses: actions/github-script@v6
