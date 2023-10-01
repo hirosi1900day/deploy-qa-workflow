@@ -20,6 +20,7 @@ env:
   QA_FAMILY: frontend-qa-task-def
   QA_REPOSITORY_URL: 572919087216.dkr.ecr.ap-northeast-1.amazonaws.com/nginx
   LB_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:572919087216:loadbalancer/app/qa-lb/faef0a5b92b2d8be
+  QA_CLUSTER: ecs-lessson-cluster
 
 jobs:
   # PRに `/deploy-qa` のコメントをしたとき、+1のリアクションをつけ、PRにQAラベルをつける。
@@ -157,11 +158,10 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Create Target Group
+      id: target_gruop
       env:
         PORT: ${{ steps.create_port.outputs.result }}
       run: |
-        echo $PORT
-        echo qa-$PORT
         TG_ARN=$(aws elbv2 create-target-group \
         --name qa-$PORT \
         --protocol HTTP \
@@ -176,6 +176,7 @@ jobs:
         --protocol HTTP \
         --port $PORT \
         --default-actions Type=forward,TargetGroupArn=$TG_ARN; true
+        echo "target_arn=$TG_ARN" >> $GITHUB_ENV
        
 
       # --certificates CertificateArn=$VPC_ID \
@@ -191,6 +192,9 @@ jobs:
 
     # stagingのECSサービスの設定を取得し、QA環境用に差し替えたJSONを作成
     - name: Register Task Def
+      env: 
+        DEPLOY_ENV: qa-${{ steps.create_port.outputs.result }}
+        TG_ARN: ${{ steps.target_gruop.outputs.result }}
       run: |
         TASK_DEF_ARN=$(aws ecs register-task-definition \
         --cli-input-json file://task-definition.json \
@@ -224,6 +228,8 @@ jobs:
 
     - name: Update Service
         # QA環境のECSサービスが存在しない場合は作成し、存在する場合はタスク定義のリビジョンを更新
+      env: 
+        DEPLOY_ENV: qa-${{ steps.create_port.outputs.result }}
       run: |
         cat service.json
         if [ "$ECS_SERVICE_STATUS" == "" ]; then
