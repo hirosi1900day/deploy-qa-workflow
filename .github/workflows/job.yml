@@ -87,4 +87,11 @@ jobs:
       PR_NUMBER: ${{ github.event.issue.number }}
     steps:
     - name: Notification Failure
-      run: echo https://github.com/AVA-Intelligence-Inc/ava-travel-frontend/pull/${{ env.PR_NUMBER }}
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_TITLE: 'QAデプロイ失敗通知'
+        SLACK_COLOR: '#dc143c'
+        SLACK_WEBHOOK: ${{ secrets.QA_SLACK_WEBHOOK_URL }}
+        SLACK_MESSAGE: |
+          QA環境デプロイに失敗しました。
+          PR: https://github.com/AVA-Intelligence-Inc/ava-travel-frontend/pull/${{ env.PR_NUMBER }}
