@@ -1,0 +1,6 @@
+[リリース] <%= Time.now.strftime("%Y-%m-%d %H:%M") %>
+**[Web講演会カレンダー](https://mdpr.backlog.com/alias/wiki/479169#loom-header-9)を確認の上、講演会前後のデプロイは避けてください**
+
+<% pull_requests.each do |pr| -%>
+- <%= "##{pr.pr.number} *( __#{pr.pr.head.ref}__ by __#{pr.pr.user.login}__ )*" %>
+<% end -%>
